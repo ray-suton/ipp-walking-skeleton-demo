@@ -1,0 +1,17 @@
+# Allowlist: publish only the demo. Everything else in this folder (course handouts,
+# team documents, screenshots, local run reports) stays out of the repository.
+*
+!.gitignore
+!README.md
+!PROJECT_DESCRIPTION.md
+!PROGRESS.md
+!feature-list.json
+!package.json
+!index.html
+!styles.css
+!src/
+!src/*.js
+!scripts/
+!scripts/*.mjs
+!tests/
+!tests/*.mjs

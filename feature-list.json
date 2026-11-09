@@ -1,0 +1,132 @@
+{
+  "project": "IPP Walking Skeleton Demo (Coop)",
+  "last_updated": "2026-11-09",
+  "notes": "passes=true means verified this session: unit tests (npm test, 32/32) and/or a scripted run of the real UI in Chrome against http://127.0.0.1:4173. Story IDs are the baseline backlog IDs from Lab 3; no Sprint 0 R-numbers were available, so none are cited.",
+  "features": [
+    {
+      "id": "F01",
+      "name": "Employer submits an opportunity (IPP-01 / EMP-01)",
+      "description": "Employer HR form requires organization, title, description and location; whitespace-only values are rejected; a valid submission gets a unique ID (OPP-003, …) and starts as Pending Review.",
+      "verification_steps": ["Employer HR > Fill sample data > Submit for review: OPP-003 appears as Pending Review", "Leave organization as spaces and submit: inline errors, nothing created, typed values kept"],
+      "passes": true,
+      "notes": "Store tests + UI run (valid and error cases)."
+    },
+    {
+      "id": "F02",
+      "name": "Simulated HR authorization blocks submission (IPP-02 / EMP-02)",
+      "description": "Unticking 'Simulate an authorized HR representative' disables submission and states that real authorization is deferred.",
+      "verification_steps": ["Untick the checkbox: submit disabled and blocked message visible", "Re-tick: submit enabled"],
+      "passes": true,
+      "notes": "Simulated control only; real authorization is deferred (IPP-17)."
+    },
+    {
+      "id": "F03",
+      "name": "Employer sees approval status (IPP-03 / EMP-03)",
+      "description": "Opportunity status list reads the shared record, so administrator approval is reflected on the same ID.",
+      "verification_steps": ["After admin approves OPP-003, Employer HR list shows OPP-003 as Approved"],
+      "passes": true
+    },
+    {
+      "id": "F04",
+      "name": "Administrator review queue (IPP-04 / ADM-01)",
+      "description": "Lists Pending Review opportunities with organization, title, description, location and ID; shows an empty-state message when none.",
+      "verification_steps": ["Queue shows OPP-003 after submission", "After approval the queue shows 'The review queue is empty'"],
+      "passes": true
+    },
+    {
+      "id": "F05",
+      "name": "Administrator approves an opportunity (IPP-05 / ADM-02, ADM-03)",
+      "description": "Approve changes the same record to Approved, removes it from the queue, lists it under Approved opportunities and makes it visible to students.",
+      "verification_steps": ["Approve OPP-003; Student view now lists 3 approved opportunities"],
+      "passes": true
+    },
+    {
+      "id": "F06",
+      "name": "Student browse and search (IPP-06 / STU-01)",
+      "description": "Only Approved opportunities are shown, with organization, title, description, location, work mode and duration; search matches title or organization; clear no-results message.",
+      "verification_steps": ["Before approval, 'harbor' finds nothing and total stays 2", "Search 'harbor' after approval finds OPP-003", "Search 'zzzz' shows the no-match message"],
+      "passes": true
+    },
+    {
+      "id": "F07",
+      "name": "Student applies with confirmation (IPP-07 / STU-02)",
+      "description": "Confirmation dialog names opportunity and applicant and says it does not approve a placement; cancel creates nothing; confirm creates APP-001 (Submitted, with submitted_at) plus a faculty review record.",
+      "verification_steps": ["Apply > Cancel: applications stay 0", "Apply > Submit application: APP-001 created, status Submitted", "Escape closes the dialog without applying"],
+      "passes": true
+    },
+    {
+      "id": "F08",
+      "name": "Duplicate application prevention (IPP-08 / STU-02)",
+      "description": "After applying, the card shows 'Application submitted' and offers no Apply button; the store also rejects a second application for the same student and opportunity.",
+      "verification_steps": ["After applying, no Apply button for that opportunity", "Store test: second submitApplication returns duplicate"],
+      "passes": true
+    },
+    {
+      "id": "F09",
+      "name": "My applications (IPP-09 / STU-03)",
+      "description": "Lists application ID, linked opportunity, application status and a separate 'Not placed' placement status; the application count updates.",
+      "verification_steps": ["My applications tab shows APP-001 / OPP-003 / Submitted / Not placed; tab count reads (1)"],
+      "passes": true
+    },
+    {
+      "id": "F10",
+      "name": "Student demo profile (IPP-10 / STU-04)",
+      "description": "Nonblank display name can be saved; student ID and seeded eligibility shown; eligibility verification identified as deferred.",
+      "verification_steps": ["Save a blank name: error; save 'Alex R. Lee': heading and Faculty view update"],
+      "passes": true
+    },
+    {
+      "id": "F11",
+      "name": "Faculty read-only application view (IPP-11 / FAC-01, FAC-03)",
+      "description": "Shows student name, organization, title, application/student/opportunity/review IDs and review status; no action controls; informative empty state.",
+      "verification_steps": ["Faculty view shows APP-001, STU-001, OPP-003, REV-001", "No buttons, inputs or selects inside the view content"],
+      "passes": true
+    },
+    {
+      "id": "F12",
+      "name": "Application vs placement status (IPP-12 / FAC-02)",
+      "description": "Application status Submitted and placement status Not placed are displayed separately, with a statement that viewing an application does not approve a placement.",
+      "verification_steps": ["Faculty and Student views show both statuses and the disclaimer"],
+      "passes": true
+    },
+    {
+      "id": "F13",
+      "name": "Role switching with visible disclosure (IPP-13)",
+      "description": "Four role views reachable from the sidebar (hash routes); persistent banner states that role switching and HR authorization are simulated.",
+      "verification_steps": ["Visit each role; banner present on all"],
+      "passes": true,
+      "notes": "Opens on Student per the Lab 3 appendix design reference."
+    },
+    {
+      "id": "F14",
+      "name": "Records persist across role changes and reloads (IPP-14)",
+      "description": "Records are stored in browser localStorage; the banner explains they are browser-local and not shared across users or devices. Falls back to in-memory with a warning if storage is blocked.",
+      "verification_steps": ["Create a full journey, reload the page: Faculty view still shows APP-001"],
+      "passes": true,
+      "notes": "Blocked-storage fallback covered by a store test, not exercised in a real private window."
+    },
+    {
+      "id": "F15",
+      "name": "Reset demo data with confirmation (IPP-15)",
+      "description": "Reset opens a confirmation dialog (Cancel is the default); confirming restores the two sample opportunities and the sample student and clears submissions and applications; IDs restart.",
+      "verification_steps": ["Reset > Cancel keeps data", "Reset > confirm restores 2 opportunities, 0 applications"],
+      "passes": true
+    },
+    {
+      "id": "F16",
+      "name": "Integrated four-role acceptance flow (IPP-16)",
+      "description": "One new record travels Employer > Admin > Student > Faculty with consistent IDs while placement stays Not placed.",
+      "verification_steps": ["Follow the demo script in PROJECT_DESCRIPTION.md"],
+      "passes": true,
+      "notes": "Store-level test plus a scripted run of the real UI in Chrome (32 checks, 0 failures)."
+    },
+    {
+      "id": "F17",
+      "name": "Responsive layout, keyboard and screen-reader basics",
+      "description": "Single-column layout on narrow screens with no horizontal overflow; labeled controls; aria-live announcements; arrow-key tab navigation; focus management after dialogs and actions.",
+      "verification_steps": ["Load at 390px width: no horizontal overflow in any of the six views", "Arrow/Home/End keys move between student tabs"],
+      "passes": false,
+      "notes": "Layout and keyboard verified in Chrome (iframe at 390px). Not verified: real phone, other browsers, an actual screen reader, formal contrast audit."
+    }
+  ]
+}

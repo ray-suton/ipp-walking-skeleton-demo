@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>IPP Walking Skeleton Demo</title>
+    <meta
+      name="description"
+      content="Sprint 1 walking skeleton of the Internship Practicum Platform: Employer HR, University Administrator, Student and Faculty Reviewer views over one shared synthetic data set."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">IPP</span>
+          <div>
+            <p class="brand-name">Internship Practicum Platform</p>
+            <p class="brand-sub">Sprint 1 · Walking skeleton</p>
+          </div>
+        </div>
+        <nav id="role-nav" aria-label="Demo roles"></nav>
+        <p class="sidebar-note">Switching roles is a demo shortcut, not a sign-in.</p>
+      </aside>
+
+      <main id="main" tabindex="-1">
+        <section class="banner" aria-labelledby="banner-title">
+          <div class="banner-row">
+            <p>
+              <strong id="banner-title">Demo prototype.</strong>
+              Role switching and HR authorization are <strong>simulated</strong>. All records are synthetic and are
+              stored only in this browser, so they are not shared across users or devices.
+            </p>
+            <button type="button" class="btn btn-quiet" id="reset-btn">Reset demo data</button>
+          </div>
+          <p id="storage-warning" class="banner-warn" hidden>
+            This browser is blocking local storage, so records will be lost when the page reloads.
+          </p>
+          <details>
+            <summary>What is working, simulated, or deferred?</summary>
+            <div class="scope-grid">
+              <div>
+                <h2>Working</h2>
+                <ul>
+                  <li>One shared set of records carried Employer HR → Administrator → Student → Faculty with the same IDs</li>
+                  <li>Required-field checks, status changes, duplicate-application prevention</li>
+                  <li>Records survive role changes and page reloads in this browser</li>
+                </ul>
+              </div>
+              <div>
+                <h2>Simulated</h2>
+                <ul>
+                  <li>Role switching (no login)</li>
+                  <li>HR authorization checkbox</li>
+                  <li>The single student (Alex Lee, STU-001) and faculty reviewer</li>
+                </ul>
+              </div>
+              <div>
+                <h2>Deferred</h2>
+                <ul>
+                  <li>Real authentication and role permissions</li>
+                  <li>Shared central storage</li>
+                  <li>Eligibility verification</li>
+                  <li>Review decisions, return for revision, placement decisions</li>
+                </ul>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <div id="view"></div>
+      </main>
+    </div>
+
+    <!-- Persistent live region for confirmations; content is injected by app.js -->
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <dialog id="apply-dialog" aria-labelledby="apply-title">
+      <h2 id="apply-title">Confirm your application</h2>
+      <dl class="facts" id="apply-facts"></dl>
+      <p class="note">
+        Submitting expresses interest only. It does <strong>not</strong> approve a placement.
+      </p>
+      <p id="apply-error" class="error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-quiet" id="apply-cancel">Cancel</button>
+        <button type="button" class="btn" id="apply-confirm" autofocus>Submit application</button>
+      </div>
+    </dialog>
+
+    <dialog id="reset-dialog" aria-labelledby="reset-title">
+      <h2 id="reset-title">Reset demo data?</h2>
+      <p>
+        This restores the two sample opportunities and the sample student, and removes every opportunity, application
+        and name change created in this browser.
+      </p>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-quiet" id="reset-cancel" autofocus>Cancel</button>
+        <button type="button" class="btn btn-danger" id="reset-confirm">Reset demo data</button>
+      </div>
+    </dialog>
+
+    <script src="src/store.js"></script>
+    <script src="src/app.js"></script>
+  </body>
+</html>
