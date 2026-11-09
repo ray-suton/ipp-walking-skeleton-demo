@@ -13,7 +13,7 @@ Project type: **development** (course prototype). The class build itself is mean
 
 ## Status
 
-Working locally. All 16 baseline backlog stories (IPP-01 … IPP-16) are implemented and verified; see `feature-list.json` and `PROGRESS.md`. Not yet connected to any Lovable/GitHub project (no access or links were provided).
+Live at <https://ray-suton.github.io/ipp-walking-skeleton-demo/> (GitHub Pages, served from `main`; source at <https://github.com/ray-suton/ipp-walking-skeleton-demo>). All 16 baseline backlog stories (IPP-01 … IPP-16) are implemented and verified; see `feature-list.json` and `PROGRESS.md`. Not connected to the class's shared Lovable project or `ipp-master` repo (no access or links were provided).
 
 ## Tech stack
 

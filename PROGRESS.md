@@ -6,6 +6,14 @@ Authoritative planning lives in the course's Lab 3 – Sprint 1 walking-skeleton
 
 Sprint 1: walking skeleton demo. Local standalone implementation is complete and verified; the shared Lovable/GitHub build is a separate class activity.
 
+## 2026-11-09: hosted on GitHub Pages
+
+- Created the public repo `ray-suton/ipp-walking-skeleton-demo` (13 allowlisted demo files only; course handouts, team documents and local reports are excluded by an allowlist `.gitignore`), pushed `main`, enabled Pages from `main` / root.
+- Live URL: <https://ray-suton.github.io/ipp-walking-skeleton-demo/>
+- Verified on the live origin in Chrome: scripted journey 12/12 checks pass (HR block, blank-field error, submit, approve, student search, apply with duplicate prevented, faculty linked IDs and *Not placed*), records persist across a real reload, no console errors; `plan.md` is not served (404). Demo data on that origin was reset afterwards.
+- Commits use the GitHub noreply address.
+- Remaining: first load is the only network use; the site works offline after that only if the browser has cached it (not tested). Share the live link only after a rehearsal on the presenting machine.
+
 ## 2026-11-09: first working demo
 
 **Work done**
