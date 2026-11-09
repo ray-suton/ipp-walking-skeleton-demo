@@ -332,3 +332,115 @@ test('IPP-16 one new record travels Employer -> Admin -> Student -> Faculty with
   // 7. Employer HR view reflects the approval on the same record.
   assert.equal(store.listOpportunities().find((o) => o.opportunity_id === oppId).approval_status, 'Approved');
 });
+
+// ---- Activity feed, journey tracker, filter/sort (professional redesign) ----
+
+test('activity feed records each hand-off, newest first, with the acting role', () => {
+  const store = fresh();
+  store.reset();
+  const { opportunity } = store.submitOpportunity(VALID, { hrAuthorized: true });
+  store.approveOpportunity(opportunity.opportunity_id);
+  store.submitApplication('STU-001', opportunity.opportunity_id);
+  store.updateDisplayName('STU-001', 'Alexandra Lee');
+
+  const feed = store.listActivity();
+  assert.deepEqual(
+    feed.map((entry) => entry.kind),
+    ['profile_updated', 'application_submitted', 'opportunity_approved', 'opportunity_submitted', 'demo_reset'],
+  );
+  assert.deepEqual(feed.map((entry) => entry.role), ['student', 'student', 'admin', 'employer', 'system']);
+  assert.match(feed[1].text, /Alex Lee applied to “Controls Intern”/);
+  assert.equal(feed[1].ref, 'APP-001');
+  assert.equal(new Set(feed.map((entry) => entry.activity_id)).size, feed.length, 'activity IDs are unique');
+  assert.ok(feed.every((entry) => !Number.isNaN(Date.parse(entry.at))));
+  assert.equal(store.listActivity(2).length, 2, 'limit is honoured');
+});
+
+test('activity feed ignores failed actions and unchanged display names', () => {
+  const store = fresh();
+  store.submitOpportunity({ ...VALID, title: '' }, { hrAuthorized: true });
+  store.submitOpportunity(VALID, { hrAuthorized: false });
+  store.approveOpportunity('OPP-001'); // already approved
+  store.submitApplication('STU-001', 'OPP-999');
+  store.updateDisplayName('STU-001', 'Alex Lee'); // same name
+  assert.equal(store.listActivity().length, 0);
+});
+
+test('activity feed is capped so browser storage cannot grow without bound', () => {
+  const store = fresh();
+  for (let i = 0; i < 80; i += 1) store.submitOpportunity({ ...VALID, title: `Role ${i}` }, { hrAuthorized: true });
+  assert.equal(store.listActivity().length, 60);
+  assert.match(store.listActivity()[0].text, /Role 79/);
+});
+
+test('records saved before the activity feed existed still load', () => {
+  const storage = memoryStorage();
+  const legacy = JSON.parse(JSON.stringify(globalThis.IPPStore.seedState()));
+  delete legacy.activity;
+  storage.setItem(STORAGE_KEY, JSON.stringify(legacy));
+  const store = createStore(storage);
+  assert.equal(store.listOpportunities().length, 2);
+  assert.deepEqual(store.listActivity(), []);
+  store.submitOpportunity(VALID, { hrAuthorized: true });
+  assert.equal(store.listActivity().length, 1);
+});
+
+test('journey: starts empty and advances one hand-off at a time while placement stays Not placed', () => {
+  const store = fresh();
+  let journey = store.getJourney();
+  assert.equal(journey.opportunity, null);
+  assert.deepEqual(journey.stages.map((s) => s.done), [false, false, false, false]);
+  assert.equal(journey.complete, false);
+
+  const { opportunity } = store.submitOpportunity(VALID, { hrAuthorized: true });
+  journey = store.getJourney();
+  assert.equal(journey.opportunity.opportunity_id, opportunity.opportunity_id);
+  assert.equal(journey.opportunity.organization_name, 'Harbor Robotics');
+  assert.deepEqual(journey.stages.map((s) => s.done), [true, false, false, false]);
+
+  store.approveOpportunity(opportunity.opportunity_id);
+  assert.deepEqual(store.getJourney().stages.map((s) => s.done), [true, true, false, false]);
+
+  store.submitApplication('STU-001', opportunity.opportunity_id);
+  journey = store.getJourney();
+  assert.deepEqual(journey.stages.map((s) => s.done), [true, true, true, true]);
+  assert.equal(journey.complete, true);
+  assert.equal(journey.application.application_status, 'Submitted');
+  assert.equal(journey.placement_status, 'Not placed');
+  assert.deepEqual(journey.stages.map((s) => s.role), ['employer', 'admin', 'student', 'faculty']);
+});
+
+test('journey tracks the latest submitted record and ignores sample records', () => {
+  const store = fresh();
+  store.submitApplication('STU-001', 'OPP-001'); // sample record: must not count as a demo journey
+  assert.equal(store.getJourney().opportunity, null);
+  store.submitOpportunity(VALID, { hrAuthorized: true });
+  const second = store.submitOpportunity({ ...VALID, title: 'Second role' }, { hrAuthorized: true });
+  assert.equal(store.getJourney().opportunity.opportunity_id, second.opportunity.opportunity_id);
+});
+
+test('searchApproved filters by work mode and sorts newest-first or by title', () => {
+  const store = fresh();
+  const remote = store.submitOpportunity({ ...VALID, title: 'Alpha Remote Role', work_mode: 'Remote' }, { hrAuthorized: true });
+  store.approveOpportunity(remote.opportunity.opportunity_id);
+
+  assert.deepEqual(store.searchApproved('', { workMode: 'Remote' }).map((o) => o.opportunity_id), ['OPP-003']);
+  assert.deepEqual(store.searchApproved('', { workMode: 'Hybrid' }).map((o) => o.opportunity_id), ['OPP-001']);
+  assert.equal(store.searchApproved('', { workMode: 'All' }).length, 3, '"All" means no filter');
+  assert.equal(store.searchApproved('', { workMode: 'bogus' }).length, 3, 'unknown modes are ignored');
+  assert.deepEqual(store.searchApproved('', { sort: 'newest' }).map((o) => o.opportunity_id), ['OPP-003', 'OPP-002', 'OPP-001']);
+  assert.deepEqual(store.searchApproved('', { sort: 'title' }).map((o) => o.title), ['Alpha Remote Role', 'Data Analytics Intern', 'Product Design Intern']);
+  assert.deepEqual(store.searchApproved('intern', { workMode: 'On-site', sort: 'title' }).map((o) => o.opportunity_id), ['OPP-002']);
+  assert.deepEqual(store.searchApproved('').map((o) => o.opportunity_id), ['OPP-001', 'OPP-002', 'OPP-003'], 'default order unchanged');
+});
+
+test('student applications include the linked review record; faculty reviewer is exposed read-only', () => {
+  const store = fresh();
+  store.submitApplication('STU-001', 'OPP-002');
+  const [mine] = store.listStudentApplications('STU-001');
+  assert.equal(mine.review.review_id, 'REV-001');
+  assert.equal(mine.review.review_status, 'Not started');
+  assert.equal(store.getFaculty().faculty_id, 'FAC-001');
+  store.getFaculty().display_name = 'Hacked';
+  assert.equal(store.getFaculty().display_name, 'Dr. Sam Okafor');
+});

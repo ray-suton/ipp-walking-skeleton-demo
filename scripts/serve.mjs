@@ -10,6 +10,7 @@ const ALLOWED = new Map([
   ['/index.html', ['index.html', 'text/html; charset=utf-8']],
   ['/styles.css', ['styles.css', 'text/css; charset=utf-8']],
   ['/src/store.js', ['src/store.js', 'text/javascript; charset=utf-8']],
+  ['/src/ui.js', ['src/ui.js', 'text/javascript; charset=utf-8']],
   ['/src/app.js', ['src/app.js', 'text/javascript; charset=utf-8']],
 ]);
 

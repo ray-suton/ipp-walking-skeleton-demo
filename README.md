@@ -2,7 +2,7 @@
 
 Live demo: <https://ray-suton.github.io/ipp-walking-skeleton-demo/>
 
-A small, dependency-free prototype of an **Internship Practicum Platform (IPP)**: four role views over one shared set of synthetic records.
+A small, dependency-free prototype of an **Internship Practicum Platform (IPP)**: four role views over one shared set of synthetic records. An Overview page, a live journey tracker and an activity feed show each hand-off as it happens.
 
 1. **Employer HR** submits an internship opportunity (starts as *Pending Review*).
 2. **University Administrator** reviews and approves it.

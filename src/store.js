@@ -12,6 +12,7 @@
 
   const STORAGE_KEY = 'ipp-demo-v1';
   const SCHEMA_VERSION = 1;
+  const ACTIVITY_LIMIT = 60;
 
   const OPPORTUNITY_STATUS = Object.freeze({ PENDING: 'Pending Review', APPROVED: 'Approved' });
   const APPLICATION_STATUS = Object.freeze({ SUBMITTED: 'Submitted' });
@@ -76,6 +77,7 @@
       faculty: [{ faculty_id: 'FAC-001', display_name: 'Dr. Sam Okafor' }],
       applications: [],
       reviews: [],
+      activity: [],
     };
   }
 
@@ -129,7 +131,11 @@
           const raw = storage.getItem(STORAGE_KEY);
           if (raw) {
             const parsed = JSON.parse(raw);
-            if (isValidState(parsed)) return parsed;
+            if (isValidState(parsed)) {
+              // `activity` was added after v1 first shipped; tolerate records saved without it.
+              if (!Array.isArray(parsed.activity)) parsed.activity = [];
+              return parsed;
+            }
           }
         } catch (error) {
           /* corrupted or unreadable: fall through to a fresh seed */
@@ -158,6 +164,19 @@
 
     function fail(code, message, extra) {
       return Object.assign({ ok: false, code, message }, extra);
+    }
+
+    /** Append to the activity feed shown in the UI (newest last, capped so storage stays small). */
+    function log(role, kind, text, ref) {
+      state.activity.push({
+        activity_id: nextId('ACT', state.activity, 'activity_id'),
+        at: new Date().toISOString(),
+        role,
+        kind,
+        text,
+        ref: ref || '',
+      });
+      if (state.activity.length > ACTIVITY_LIMIT) state.activity.splice(0, state.activity.length - ACTIVITY_LIMIT);
     }
 
     function submitOpportunity(input, options) {
@@ -216,6 +235,7 @@
         origin: 'demo',
       };
       state.opportunities.push(opportunity);
+      log('employer', 'opportunity_submitted', `Employer HR submitted “${opportunity.title}” for review`, opportunity.opportunity_id);
       save();
       return { ok: true, opportunity: clone(opportunity) };
     }
@@ -227,6 +247,7 @@
         return fail('already_approved', `${opportunityId} is already approved.`);
       }
       opportunity.approval_status = OPPORTUNITY_STATUS.APPROVED;
+      log('admin', 'opportunity_approved', `Administrator approved “${opportunity.title}”`, opportunity.opportunity_id);
       save();
       return { ok: true, opportunity: clone(opportunity) };
     }
@@ -264,6 +285,7 @@
       };
       state.applications.push(application);
       state.reviews.push(review);
+      log('student', 'application_submitted', `${student.display_name} applied to “${opportunity.title}”`, application.application_id);
       save();
       return { ok: true, application: clone(application), review: clone(review) };
     }
@@ -277,6 +299,9 @@
         const message = `Display name must be ${LIMITS.display_name} characters or fewer.`;
         return fail('validation', message, { errors: { display_name: message } });
       }
+      if (student.display_name !== name) {
+        log('student', 'profile_updated', `Student display name changed to “${name}”`, student.student_id);
+      }
       student.display_name = name;
       save();
       return { ok: true, student: clone(student) };
@@ -284,6 +309,7 @@
 
     function reset() {
       state = seedState();
+      log('system', 'demo_reset', 'Demo data reset to the sample records', '');
       save();
     }
 
@@ -304,14 +330,60 @@
         .map(withOrganization);
     }
 
-    function searchApproved(query) {
+    /**
+     * Approved opportunities matching a title/organization query.
+     * options.workMode narrows to one work mode; options.sort is 'newest' or 'title'
+     * (omitted = insertion order).
+     */
+    function searchApproved(query, options) {
+      const opts = options || {};
       const needle = String(query ?? '').trim().toLowerCase();
-      return listOpportunities({ status: OPPORTUNITY_STATUS.APPROVED }).filter(
+      let list = listOpportunities({ status: OPPORTUNITY_STATUS.APPROVED }).filter(
         (opportunity) =>
           !needle ||
           opportunity.title.toLowerCase().includes(needle) ||
           opportunity.organization_name.toLowerCase().includes(needle),
       );
+      if (WORK_MODES.includes(opts.workMode)) list = list.filter((opportunity) => opportunity.work_mode === opts.workMode);
+      if (opts.sort === 'newest') list.reverse();
+      else if (opts.sort === 'title') list.sort((a, b) => a.title.localeCompare(b.title));
+      return list;
+    }
+
+    function getFaculty() {
+      return clone(state.faculty[0]);
+    }
+
+    /** Newest first. */
+    function listActivity(limit) {
+      return state.activity
+        .slice()
+        .reverse()
+        .slice(0, limit || ACTIVITY_LIMIT)
+        .map(clone);
+    }
+
+    /**
+     * Progress of the most recent opportunity submitted in this demo through the four hand-offs.
+     * `placement_status` is reported separately because applying never implies a placement.
+     */
+    function getJourney() {
+      const tracked = state.opportunities.slice().reverse().find((opportunity) => opportunity.origin === 'demo') || null;
+      const application = tracked ? state.applications.find((item) => item.opportunity_id === tracked.opportunity_id) : null;
+      const reviewed = Boolean(application && state.reviews.some((review) => review.application_id === application.application_id));
+      const stages = [
+        { key: 'submitted', role: 'employer', label: 'Submitted by Employer HR', done: Boolean(tracked) },
+        { key: 'approved', role: 'admin', label: 'Approved by Administrator', done: Boolean(tracked && tracked.approval_status === OPPORTUNITY_STATUS.APPROVED) },
+        { key: 'applied', role: 'student', label: 'Student applied', done: Boolean(application) },
+        { key: 'visible', role: 'faculty', label: 'Visible to Faculty Reviewer', done: reviewed },
+      ];
+      return {
+        opportunity: tracked ? withOrganization(tracked) : null,
+        application: application ? clone(application) : null,
+        stages,
+        complete: stages.every((stage) => stage.done),
+        placement_status: PLACEMENT_STATUS,
+      };
     }
 
     function getStudent(studentId) {
@@ -324,8 +396,10 @@
         .filter((application) => application.student_id === studentId)
         .map((application) => {
           const opportunity = state.opportunities.find((candidate) => candidate.opportunity_id === application.opportunity_id);
+          const review = state.reviews.find((candidate) => candidate.application_id === application.application_id);
           return Object.assign(clone(application), {
             opportunity: withOrganization(opportunity),
+            review: review ? clone(review) : null,
             placement_status: PLACEMENT_STATUS,
           });
         });
@@ -370,6 +444,9 @@
       hasApplied,
       listOpportunities,
       searchApproved,
+      getFaculty,
+      listActivity,
+      getJourney,
       getStudent,
       listStudentApplications,
       listFacultyRecords,

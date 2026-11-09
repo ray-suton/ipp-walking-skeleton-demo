@@ -6,6 +6,34 @@ Authoritative planning lives in the course's Lab 3 – Sprint 1 walking-skeleton
 
 Sprint 1: walking skeleton demo. Local standalone implementation is complete and verified; the shared Lovable/GitHub build is a separate class activity.
 
+## 2026-11-09: professional redesign (on branch `professional-redesign`, not yet on the live site)
+
+**Work done**
+- New Overview page (default route): hero, live stat tiles, clickable journey cards, journey tracker, activity feed, working/simulated/deferred summary.
+- Live right-hand rail on every role page: journey tracker (Done / Next step / Waiting) and recent activity with auto-refreshing relative times.
+- Employer HR: live listing preview with description counter; layout switches by available width (container query).
+- Student: work-mode filter, sort, result count, Clear filters; org logo tiles; per-application progress track.
+- Visual system: custom logo and favicon, hand-drawn inline SVG icons, initials tiles/avatars, persona chip with a "Simulated" tag, breadcrumb top bar, elevated cards, entrance/highlight/bump animations (all disabled under reduced-motion), mobile bottom tab bar, footer with "not a production system" disclosure. No external fonts, libraries or network calls.
+- Rules layer: activity log, journey summary, filter/sort, review linked to student applications (`src/store.js`); new `src/ui.js`.
+- User actions now update UI state and then render once (removes the render-before-state-update ordering bug class).
+
+**Verification**
+- `npm test`: 49/49 (store rules incl. new features, UI helpers, contract tests). The new guards were mutation-checked: an injected CSS-class typo, icon typo, "placed" wording and `innerHTML` were each caught by the intended test.
+- Scripted run of the real UI in Chrome against `npm start`: 48 checks, 0 failures (full four-role journey, live preview, filters, sort, highlights, focus handling, journey and activity updates), arrow-key tabs, reload persistence, no console errors.
+- Phone layout (390px iframe): no horizontal overflow across 7 route states; fixed 5-item bottom tab bar.
+- Bugs found and fixed while building: `display` rules overriding the `hidden` attribute (guarded by a CSS rule and a test); the phone reset button losing its accessible name; Employer layout too cramped beside the rail (now container-query driven).
+
+**State left behind**
+- Work lives in a clone at `~/ipp-demo` because macOS blocked this session from `~/Desktop`; the Desktop `Coop/` copy is unchanged until the branch is merged and pulled there.
+- Nothing from this redesign is pushed; the live site still serves the previous version.
+
+**Known limits and risks**
+- Not tested: wide-screen Employer layout (side-by-side), real phone, Safari/Firefox, screen reader, formal contrast audit, file:// open.
+- Container queries need Chrome 105+ / Safari 16+ / Firefox 110+; older browsers get the single-column Employer layout.
+
+**Recommended next step**
+Review locally (`npm start`), then decide whether to merge `professional-redesign` into `main` and push so GitHub Pages serves it.
+
 ## 2026-11-09: hosted on GitHub Pages
 
 - Created the public repo `ray-suton/ipp-walking-skeleton-demo` (13 allowlisted demo files only; course handouts, team documents and local reports are excluded by an allowlist `.gitignore`), pushed `main`, enabled Pages from `main` / root.

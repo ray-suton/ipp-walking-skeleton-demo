@@ -17,40 +17,45 @@ Live at <https://ray-suton.github.io/ipp-walking-skeleton-demo/> (GitHub Pages, 
 
 ## Tech stack
 
-Plain HTML + CSS + JavaScript (classic scripts, no build step, no dependencies). Records live in `localStorage` under the key `ipp-demo-v1`. Tests use Node's built-in runner (developed and tested on Node 25); the app itself needs only a browser.
+Plain HTML + CSS + JavaScript (classic scripts, no build step, no dependencies, no external fonts or CDNs; hand-drawn inline SVG icons; CSS container queries for the Employer layout). Records live in `localStorage` under the key `ipp-demo-v1`. Tests use Node's built-in runner (developed and tested on Node 25); the app itself needs only a browser.
 
 ## Run
 
 ```bash
 npm start          # http://127.0.0.1:4173/ (moves to the next free port if busy)
-npm test           # 32 tests: business rules, persistence, static contract
+npm test           # 49 tests: business rules, persistence, UI helpers, static contract
 ```
 
 Opening `index.html` straight from disk should also work (the scripts are classic, not ES modules), but this was **not tested**; use `npm start` for the demo.
 
 ## Demo script (about 2 minutes)
 
-1. Click **Reset demo data** → confirm (always start from the same state).
-2. **Employer HR**: untick *Simulate an authorized HR representative* → submit is disabled. Re-tick it. Press **Fill sample data** → **Submit for review**. Status shows `OPP-003 · Pending Review`. (For the error test: clear a field or leave only spaces, then submit.)
+The app opens on the **Overview** (live metrics, the four-step journey, recent activity). Every action below updates the journey tracker and activity feed immediately.
+
+1. Click **Reset demo data** → confirm (always start from the same state), then **Start the demo**.
+2. **Employer HR**: untick *Simulate an authorized HR representative* → submit is disabled. Re-tick it. Press **Fill sample data** (or type) and watch the **Live preview** update. **Submit for review**: status shows `OPP-003 · Pending Review`. (For the error test: clear a field or leave only spaces, then submit.)
 3. **University Administrator**: `OPP-003` is in the review queue → **Approve**. Queue now shows the empty-state message.
-4. **Student**: search `harbor`, **Apply** → dialog names the opportunity and applicant → **Submit application**. The card now says *Application submitted* (no second apply possible). Check **My applications**.
+4. **Student**: filter by work mode or search `harbor`, **Apply** → dialog names the opportunity and applicant → **Submit application**. The card now says *Application submitted* (no second apply possible). Check **My applications**.
 5. **Faculty Reviewer**: same `APP-001` / `STU-001` / `OPP-003` / `REV-001`, status *Submitted*, placement *Not placed*, no action buttons.
-6. Reload the page: records persist. Use **What is working, simulated, or deferred?** to answer the "real vs simulated" question.
+6. Back on the **Overview**: the journey shows four completed steps, with placement still *Not placed*. Reload the page: records persist. Use **What is working, simulated, or deferred?** to answer the "real vs simulated" question.
+
+To open on the Student view instead (as in the Lab 3 appendix reference), set `DEFAULT_ROUTE = 'student'` at the top of `src/app.js`.
 
 ## Main files
 
 | Path | Role |
 | --- | --- |
-| `index.html`, `styles.css` | Shell, persistent disclosure banner, dialogs, styling (green/white per Lab 3 Appendix 3) |
-| `src/store.js` | All business rules and persistence: validation, ID generation, status transitions, duplicate prevention, reset. Pure, unit-tested. |
-| `src/app.js` | Four role views, routing (`#employer`, `#admin`, `#student[/tab]`, `#faculty`), toasts, dialogs. Text is always set via `textContent`. |
-| `scripts/serve.mjs` | Local static server with port fallback; serves only demo files. |
-| `tests/` | `store.test.mjs` (rules + IPP-16 flow), `app-contract.test.mjs` (disclosure text, safe DOM use, server allowlist) |
+| `index.html`, `styles.css` | Shell (sidebar / mobile tab bar, top bar, disclosure banner, live rail, footer), dialogs, design system (green/white per Lab 3 Appendix 3, light theme, reduced-motion aware) |
+| `src/store.js` | All business rules and persistence: validation, ID generation, status transitions, duplicate prevention, filters/sort, activity log, journey summary, reset. Pure, unit-tested. |
+| `src/ui.js` | Presentation helpers: DOM builder, inline SVG icon set, org tiles/avatars, relative time. No HTML-string injection. |
+| `src/app.js` | Overview + four role views, routing (`#overview`, `#employer`, `#admin`, `#student[/tab]`, `#faculty`), journey tracker, activity feed, live preview, toasts, dialogs. |
+| `scripts/serve.mjs` | Local static server with port fallback; serves only the files `index.html` references. |
+| `tests/` | `store.test.mjs` (rules, activity, journey, IPP-16 flow), `ui.test.mjs` (initials, colours, time), `app-contract.test.mjs` (disclosure text, safe DOM use, icon and CSS-class integrity, server allowlist) |
 | `feature-list.json`, `PROGRESS.md` | Feature ledger and session log |
 
 ## Data model
 
-Follows the Lab 3 dictionary: `Employer`, `Opportunity`, `Student`, `Application`, `Faculty review`. Demo-only additions: `Opportunity.origin` (`sample` / `demo`, to label records in lists) and a `faculty` list holding one reviewer (`FAC-001`). `Placement status` is a constant (*Not placed*), not a stored field, because placement decisions are deferred (IPP-22).
+Follows the Lab 3 dictionary: `Employer`, `Opportunity`, `Student`, `Application`, `Faculty review`. Demo-only additions: `Opportunity.origin` (`sample` / `demo`, to label records in lists), a `faculty` list holding one reviewer (`FAC-001`), and an `activity` list (capped at 60 entries) that feeds the activity panel. `Placement status` is a constant (*Not placed*), not a stored field, because placement decisions are deferred (IPP-22).
 
 ## Real vs simulated vs deferred
 
