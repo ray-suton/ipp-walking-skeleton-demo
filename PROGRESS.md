@@ -6,7 +6,7 @@ Authoritative planning lives in the course's Lab 3 – Sprint 1 walking-skeleton
 
 Sprint 1: walking skeleton demo. Local standalone implementation is complete and verified; the shared Lovable/GitHub build is a separate class activity.
 
-## 2026-11-09: professional redesign (on branch `professional-redesign`, not yet on the live site)
+## 2026-11-09 to 2026-11-10: professional redesign (published to GitHub Pages 2026-11-10)
 
 **Work done**
 - New Overview page (default route): hero, live stat tiles, clickable journey cards, journey tracker, activity feed, working/simulated/deferred summary.
@@ -24,15 +24,20 @@ Sprint 1: walking skeleton demo. Local standalone implementation is complete and
 - Bugs found and fixed while building: `display` rules overriding the `hidden` attribute (guarded by a CSS rule and a test); the phone reset button losing its accessible name; Employer layout too cramped beside the rail (now container-query driven).
 
 **State left behind**
-- Work lives in a clone at `~/ipp-demo` because macOS blocked this session from `~/Desktop`; the Desktop `Coop/` copy is unchanged until the branch is merged and pulled there.
-- Nothing from this redesign is pushed; the live site still serves the previous version.
+- Published: `main` is at the redesign plus the cache-busting fix; GitHub Pages serves it at <https://ray-suton.github.io/ipp-walking-skeleton-demo/>.
+- Work was done in a clone at `~/ipp-demo` because macOS blocked that session from `~/Desktop`; the Desktop `Coop/` copy is a clone of the same repo and needs `git pull` to catch up.
 
 **Known limits and risks**
 - Not tested: wide-screen Employer layout (side-by-side), real phone, Safari/Firefox, screen reader, formal contrast audit, file:// open.
 - Container queries need Chrome 105+ / Safari 16+ / Firefox 110+; older browsers get the single-column Employer layout.
 
+**Release incident (found and fixed on 2026-11-10)**
+- Right after the first push of the redesign, a live check failed 6 of 16 checks: the browser had received the new `index.html` with the previous `app.js` and `styles.css` (Pages and browsers cache each file for about 10 minutes), which rendered a broken page. The server itself was correct (all live files matched the pushed ones).
+- Fix: asset URLs in `index.html` now carry a content hash (`app.js?v=…`), written by `npm run stamp`; `npm test` fails if the hashes are stale (mutation-checked). Re-ran the live check afterwards: 21/21 pass, records persist across reload, no console errors.
+- Residual risk: a visitor holding the old `index.html` in cache can briefly pair it with newer files; this self-heals when that 10 minute cache expires.
+
 **Recommended next step**
-Review locally (`npm start`), then decide whether to merge `professional-redesign` into `main` and push so GitHub Pages serves it.
+Rehearse the demo script in `PROJECT_DESCRIPTION.md` once on the presenting machine. After any later change to `styles.css` or `src/*.js`, run `npm run stamp` before committing. Decide whether a shared backend is needed (IPP-18); today's data is browser-local only.
 
 ## 2026-11-09: hosted on GitHub Pages
 

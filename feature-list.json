@@ -1,7 +1,7 @@
 {
   "project": "IPP Walking Skeleton Demo (Coop)",
   "last_updated": "2026-11-09",
-  "notes": "passes=true means verified this session: unit tests (npm test, 49/49) and/or a scripted run of the real UI in Chrome against http://127.0.0.1:4173 (48 checks, 0 failures). Story IDs are the baseline backlog IDs from Lab 3; no Sprint 0 R-numbers were available, so none are cited.",
+  "notes": "passes=true means verified this session: unit tests (npm test, 52/52) and/or a scripted run of the real UI in Chrome against http://127.0.0.1:4173 (48 checks, 0 failures) and against the live GitHub Pages site (21 checks, 0 failures). Story IDs are the baseline backlog IDs from Lab 3; no Sprint 0 R-numbers were available, so none are cited.",
   "features": [
     {
       "id": "F01",
@@ -225,6 +225,17 @@
         "Filter Remote: empty state with Clear filters; clearing restores all"
       ],
       "passes": true
+    },
+    {
+      "id": "F23",
+      "name": "Cache-safe releases",
+      "description": "Asset URLs in index.html carry a content hash written by `npm run stamp`, so a deploy cannot serve new HTML with old scripts or styles; the test suite fails if the hashes are stale.",
+      "verification_steps": [
+        "Edit styles.css without re-stamping: npm test fails",
+        "Live site loads hash-versioned scripts and stylesheet and runs the new build"
+      ],
+      "passes": true,
+      "notes": "Added after a live check caught old assets being served with the new HTML. Old cached index.html can still briefly pair with new files until its 10 minute cache expires."
     }
   ]
 }
