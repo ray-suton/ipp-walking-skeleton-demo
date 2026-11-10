@@ -907,6 +907,21 @@ dialog .facts {
 .row-title {
   font-weight: 650;
 }
+.link-btn {
+  appearance: none;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--g800);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.link-btn:hover {
+  color: var(--g950);
+}
 
 /* Student applications: lifecycle track */
 

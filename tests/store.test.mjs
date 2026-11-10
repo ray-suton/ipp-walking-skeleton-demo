@@ -444,3 +444,76 @@ test('student applications include the linked review record; faculty reviewer is
   store.getFaculty().display_name = 'Hacked';
   assert.equal(store.getFaculty().display_name, 'Dr. Sam Okafor');
 });
+
+// ---- Employer HR can view applications after a student applies ----
+
+test('employer applications: empty until a student applies', () => {
+  const store = fresh();
+  assert.deepEqual(store.listEmployerApplications(), []);
+  assert.deepEqual(store.applicantCounts(), {});
+});
+
+test('employer applications: after a student applies, HR sees the applicant, opportunity and statuses', () => {
+  const store = fresh();
+  const { opportunity } = store.submitOpportunity(VALID, { hrAuthorized: true });
+  store.approveOpportunity(opportunity.opportunity_id);
+  store.submitApplication('STU-001', opportunity.opportunity_id);
+
+  const [entry] = store.listEmployerApplications();
+  assert.equal(entry.application.application_id, 'APP-001');
+  assert.equal(entry.application.application_status, 'Submitted');
+  assert.equal(entry.application.opportunity_id, opportunity.opportunity_id);
+  assert.equal(entry.opportunity.title, 'Controls Intern');
+  assert.equal(entry.opportunity.organization_name, 'Harbor Robotics');
+  assert.deepEqual(entry.student, { student_id: 'STU-001', display_name: 'Alex Lee', eligibility_status: 'Eligible' });
+  assert.equal(entry.placement_status, 'Not placed', 'viewing an application is not a placement');
+  assert.deepEqual(store.applicantCounts(), { [opportunity.opportunity_id]: 1 });
+});
+
+test('employer applications: data boundary, HR never receives faculty review records or extra student fields', () => {
+  const store = fresh();
+  store.submitApplication('STU-001', 'OPP-001');
+  const [entry] = store.listEmployerApplications();
+  assert.deepEqual(Object.keys(entry).sort(), ['application', 'opportunity', 'placement_status', 'student']);
+  assert.deepEqual(Object.keys(entry.student).sort(), ['display_name', 'eligibility_status', 'student_id']);
+  assert.equal('review' in entry, false);
+  assert.equal(JSON.stringify(entry).includes('REV-001'), false, 'no review ID leaks to the employer view');
+  assert.equal(JSON.stringify(entry).includes('FAC-001'), false, 'no faculty ID leaks to the employer view');
+});
+
+test('employer applications: newest first, counts per opportunity, and a later display-name change shows through', () => {
+  const store = fresh();
+  store.submitApplication('STU-001', 'OPP-001');
+  store.submitApplication('STU-001', 'OPP-002');
+  assert.deepEqual(store.listEmployerApplications().map((e) => e.application.application_id), ['APP-002', 'APP-001']);
+  assert.deepEqual(store.applicantCounts(), { 'OPP-001': 1, 'OPP-002': 1 });
+
+  store.updateDisplayName('STU-001', 'Alexandra Lee');
+  assert.ok(store.listEmployerApplications().every((e) => e.student.display_name === 'Alexandra Lee'));
+});
+
+test('employer applications: failed or duplicate applications never show up for HR', () => {
+  const store = fresh();
+  const { opportunity } = store.submitOpportunity(VALID, { hrAuthorized: true });
+  store.submitApplication('STU-001', opportunity.opportunity_id); // still Pending Review: rejected
+  store.submitApplication('STU-001', 'OPP-001');
+  store.submitApplication('STU-001', 'OPP-001'); // duplicate: rejected
+  assert.equal(store.listEmployerApplications().length, 1);
+  assert.deepEqual(store.applicantCounts(), { 'OPP-001': 1 });
+});
+
+test('employer applications: results are copies, and reset clears them', () => {
+  const store = fresh();
+  store.submitApplication('STU-001', 'OPP-001');
+  store.listEmployerApplications()[0].student.display_name = 'Hacked';
+  store.applicantCounts()['OPP-001'] = 99;
+  assert.equal(store.listEmployerApplications()[0].student.display_name, 'Alex Lee');
+  assert.equal(store.applicantCounts()['OPP-001'], 1);
+  store.reset();
+  assert.deepEqual(store.listEmployerApplications(), []);
+});
+
+test('journey: the final hand-off names both Employer HR and Faculty as able to view the application', () => {
+  const store = fresh();
+  assert.equal(store.getJourney().stages[3].label, 'Visible to Employer HR and Faculty');
+});

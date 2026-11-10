@@ -6,6 +6,28 @@ Authoritative planning lives in the course's Lab 3 – Sprint 1 walking-skeleton
 
 Sprint 1: walking skeleton demo. Local standalone implementation is complete and verified; the shared Lovable/GitHub build is a separate class activity.
 
+## 2026-11-10: Employer HR can view applications (committed locally, not pushed)
+
+**Work done**
+- After a student applies, Employer HR now sees the applicant: new **Applicants** tab on the Employer view (name, student ID, eligibility, application/opportunity IDs, *Submitted* vs *Not placed*, submitted time), a live count on the tab, a "1 applicant · View" link under each opportunity, and a link from the student's apply confirmation (`#employer/applicants`).
+- Data boundary: `listEmployerApplications()` / `applicantCounts()` in `src/store.js` give HR a narrower projection than Faculty (no review records, only the student fields needed to recognise an applicant). Tests pin this.
+- Tabs generalised for Student and Employer (`#employer/submit`, `#employer/applicants`); Overview step card and the journey's final step now mention Employer HR.
+
+**Verification**
+- `npm test`: 59/59 (7 new store tests for the employer view; stamp, icon and CSS-class guards still pass).
+- Scripted real-UI run in Chrome: 22 checks, 21 passed. The one miss was my own wrong expectation that the applicant card flashes when HR opens the tab (highlights play only on the render right after an action); not a product bug and not added as a feature.
+- Real-key tab navigation (ArrowRight, wrap, End), deep link `#employer/applicants` after a real reload, wide two-column Employer layout (seen for the first time), and 390px layout: no horizontal overflow in 5 route states.
+
+**State left behind**
+- Committed locally in `~/ipp-demo` only; the live site still serves the previous build until pushed. Browser demo data was reset.
+
+**Known limits and risks**
+- The simulated HR user is not tied to an organization, so it sees applicants for every opportunity. Shortlist/interview/offer actions, "new applicant" badges and what student data employers may see are deferred decisions.
+- Not tested: real phone, Safari/Firefox, screen reader, formal contrast audit.
+
+**Recommended next step**
+Decide whether to push (then wait for the Pages build and re-run the live check, hard-refreshing first).
+
 ## 2026-11-09 to 2026-11-10: professional redesign (published to GitHub Pages 2026-11-10)
 
 **Work done**

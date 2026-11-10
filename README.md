@@ -7,7 +7,7 @@ A small, dependency-free prototype of an **Internship Practicum Platform (IPP)**
 1. **Employer HR** submits an internship opportunity (starts as *Pending Review*).
 2. **University Administrator** reviews and approves it.
 3. **Student** finds the approved opportunity and applies (duplicates are blocked).
-4. **Faculty Reviewer** sees the same application, read-only. *Submitted* (application) and *Not placed* (placement) are always shown separately.
+4. **Employer HR** (Applicants tab) and **Faculty Reviewer** both see the same application, read-only. *Submitted* (application) and *Not placed* (placement) are always shown separately.
 
 ## Please read: what is real and what is not
 

@@ -375,7 +375,7 @@
         { key: 'submitted', role: 'employer', label: 'Submitted by Employer HR', done: Boolean(tracked) },
         { key: 'approved', role: 'admin', label: 'Approved by Administrator', done: Boolean(tracked && tracked.approval_status === OPPORTUNITY_STATUS.APPROVED) },
         { key: 'applied', role: 'student', label: 'Student applied', done: Boolean(application) },
-        { key: 'visible', role: 'faculty', label: 'Visible to Faculty Reviewer', done: reviewed },
+        { key: 'visible', role: 'faculty', label: 'Visible to Employer HR and Faculty', done: reviewed },
       ];
       return {
         opportunity: tracked ? withOrganization(tracked) : null,
@@ -421,6 +421,41 @@
       });
     }
 
+    /**
+     * Employer HR view: applications received, newest first.
+     * Deliberately a narrower projection than the faculty view: no review records, and only the
+     * student fields an employer needs to recognise an applicant (what employers may see about a
+     * student in a real system is a privacy decision that is still open).
+     */
+    function listEmployerApplications() {
+      return state.applications
+        .slice()
+        .reverse()
+        .map((application) => {
+          const opportunity = state.opportunities.find((candidate) => candidate.opportunity_id === application.opportunity_id);
+          const student = state.students.find((candidate) => candidate.student_id === application.student_id);
+          return {
+            application: clone(application),
+            opportunity: withOrganization(opportunity),
+            student: {
+              student_id: student.student_id,
+              display_name: student.display_name,
+              eligibility_status: student.eligibility_status,
+            },
+            placement_status: PLACEMENT_STATUS,
+          };
+        });
+    }
+
+    /** Number of applications received per opportunity ID, e.g. { 'OPP-003': 1 }. */
+    function applicantCounts() {
+      const byOpportunity = {};
+      for (const application of state.applications) {
+        byOpportunity[application.opportunity_id] = (byOpportunity[application.opportunity_id] || 0) + 1;
+      }
+      return byOpportunity;
+    }
+
     function counts() {
       return {
         pending: state.opportunities.filter((o) => o.approval_status === OPPORTUNITY_STATUS.PENDING).length,
@@ -450,6 +485,8 @@
       getStudent,
       listStudentApplications,
       listFacultyRecords,
+      listEmployerApplications,
+      applicantCounts,
       counts,
       getApplicationFor: (studentId, opportunityId) => {
         const found = state.applications.find((a) => a.student_id === studentId && a.opportunity_id === opportunityId);

@@ -20,7 +20,7 @@
   const OVERVIEW = { id: 'overview', label: 'Overview', short: 'Overview', hint: 'Journey and live activity', icon: 'home' };
   // Ordered by the end-to-end journey.
   const ROLES = [
-    { id: 'employer', label: 'Employer HR', short: 'Employer', hint: '1 · Submit opportunities', icon: 'briefcase' },
+    { id: 'employer', label: 'Employer HR', short: 'Employer', hint: '1 · Submit, view applicants', icon: 'briefcase' },
     { id: 'admin', label: 'University Administrator', short: 'Admin', hint: '2 · Review and approve', icon: 'shield' },
     { id: 'student', label: 'Student', short: 'Student', hint: '3 · Browse and apply', icon: 'cap' },
     { id: 'faculty', label: 'Faculty Reviewer', short: 'Faculty', hint: '4 · View applications', icon: 'book' },
@@ -32,6 +32,11 @@
     { id: 'applications', label: 'My applications', icon: 'inbox' },
     { id: 'profile', label: 'My profile', icon: 'user' },
   ];
+  const EMPLOYER_TABS = [
+    { id: 'submit', label: 'Opportunities', icon: 'briefcase' },
+    { id: 'applicants', label: 'Applicants', icon: 'inbox' },
+  ];
+  const ROLE_TABS = { student: STUDENT_TABS, employer: EMPLOYER_TABS };
 
   // Fictional organizations, used by "Fill sample data" so repeated demos do not repeat one listing.
   const SAMPLE_DRAFTS = [
@@ -296,7 +301,11 @@
   function overviewView() {
     const counts = store.counts();
     const steps = [
-      { role: ROLES[0], text: 'Submit an internship opportunity. It starts as Pending Review.', metric: `${counts.pending} pending review` },
+      {
+        role: ROLES[0],
+        text: 'Submit an internship opportunity, then see who applies. It starts as Pending Review.',
+        metric: `${counts.pending} pending · ${counts.applications} ${counts.applications === 1 ? 'applicant' : 'applicants'}`,
+      },
       { role: ROLES[1], text: 'Review the queue and approve opportunities for students.', metric: `${counts.approved} approved` },
       { role: ROLES[2], text: 'Search approved opportunities and apply once to each.', metric: `${counts.applications} ${counts.applications === 1 ? 'application' : 'applications'}` },
       { role: ROLES[3], text: 'Inspect applications read-only. An application is not a placement.', metric: `${counts.applications} ${counts.applications === 1 ? 'record' : 'records'}` },
@@ -367,17 +376,14 @@
     );
   }
 
-  // ---------- Student view ----------
+  // ---------- tabs (Student and Employer HR) ----------
 
-  function studentView() {
-    const student = store.getStudent(STUDENT_ID);
-    const counts = store.counts();
-    const mine = store.listStudentApplications(STUDENT_ID);
-
-    const tablist = h(
+  /** A tab bar for the current route; `counts` maps a tab ID to a number shown beside its label. */
+  function tabBar(tabs, label, counts) {
+    return h(
       'div',
-      { class: 'tabs', role: 'tablist', 'aria-label': 'Student sections' },
-      STUDENT_TABS.map((tab) =>
+      { class: 'tabs', role: 'tablist', 'aria-label': label },
+      tabs.map((tab) =>
         h(
           'button',
           {
@@ -392,12 +398,25 @@
           },
           icon(tab.icon, 16),
           tab.label,
-          tab.id === 'applications' && h('span', { class: 'tab-count' }, mine.length),
+          counts[tab.id] !== undefined && h('span', { class: 'tab-count' }, counts[tab.id]),
         ),
       ),
     );
-    const panel = (id, content) =>
-      h('div', { role: 'tabpanel', id: `panel-${id}`, 'aria-labelledby': `tab-${id}`, hidden: ui.tab !== id }, content);
+  }
+
+  function tabPanel(id, content) {
+    return h('div', { role: 'tabpanel', id: `panel-${id}`, 'aria-labelledby': `tab-${id}`, hidden: ui.tab !== id }, content);
+  }
+
+  // ---------- Student view ----------
+
+  function studentView() {
+    const student = store.getStudent(STUDENT_ID);
+    const counts = store.counts();
+    const mine = store.listStudentApplications(STUDENT_ID);
+
+    const tablist = tabBar(STUDENT_TABS, 'Student sections', { applications: mine.length });
+    const panel = tabPanel;
 
     return h(
       'div',
@@ -427,14 +446,14 @@
       panelEl.hidden = panelEl.id !== `panel-${id}`;
     });
     try {
-      history.replaceState(null, '', `#student/${id}`);
+      history.replaceState(null, '', `#${ui.route}/${id}`);
     } catch (error) {
       /* some embedders block history updates; the tab still works */
     }
   }
 
   function onTabKeys(event) {
-    const ids = STUDENT_TABS.map((tab) => tab.id);
+    const ids = (ROLE_TABS[ui.route] || []).map((tab) => tab.id);
     const index = ids.indexOf(ui.tab);
     let next = null;
     if (event.key === 'ArrowRight') next = (index + 1) % ids.length;
@@ -713,12 +732,12 @@
     }
     ui.pendingApply = null;
     ui.dialogFocusId = `applied-${opportunityId}`;
-    ui.fresh = new Set([opportunityId]);
+    ui.fresh = new Set([opportunityId, result.application.application_id]);
     $('#apply-dialog').close();
     const opportunity = store.listOpportunities().find((item) => item.opportunity_id === opportunityId);
     showToast(
-      `${result.application.application_id} submitted for ${opportunity.title} at ${opportunity.organization_name}. Application status: Submitted. Placement status: ${PLACEMENT_STATUS}.`,
-      { link: { href: '#faculty', text: 'Next: see it as Faculty Reviewer' } },
+      `${result.application.application_id} submitted for ${opportunity.title} at ${opportunity.organization_name}. Application status: Submitted. Placement status: ${PLACEMENT_STATUS}. Employer HR and Faculty Reviewer can now view it.`,
+      { link: { href: '#employer/applicants', text: 'Next: see it as Employer HR' } },
     );
     render();
   }
@@ -756,6 +775,8 @@
 
   function employerView() {
     const opportunities = store.listOpportunities().reverse(); // newest first
+    const received = store.listEmployerApplications();
+    const applicantCounts = store.applicantCounts();
     const hasErrors = Object.keys(ui.errors).length > 0;
 
     const form = h(
@@ -828,6 +849,12 @@
                   ? 'Waiting for university approval. Students cannot see it yet.'
                   : 'Approved. Visible to students.',
               ),
+              applicantCounts[opportunity.opportunity_id] > 0 &&
+                h(
+                  'button',
+                  { type: 'button', class: 'link-btn', onClick: () => setTab('applicants', true) },
+                  `${applicantCounts[opportunity.opportunity_id]} ${applicantCounts[opportunity.opportunity_id] === 1 ? 'applicant' : 'applicants'} · View`,
+                ),
             ),
           ),
         ),
@@ -837,9 +864,67 @@
     return h(
       'div',
       null,
-      hero('Employer HR view', 'Employer HR', 'Submit an internship opportunity for university review. New submissions start as Pending Review.', { icon: 'briefcase' }),
-      h('div', { class: 'split' }, form, h('div', { class: 'side' }, preview, statusCard)),
+      hero('Employer HR view', 'Employer HR', 'Submit an internship opportunity for university review, then see who applies. New submissions start as Pending Review.', { icon: 'briefcase' }),
+      tabBar(EMPLOYER_TABS, 'Employer sections', { applicants: received.length }),
+      tabPanel('submit', h('div', { class: 'split' }, form, h('div', { class: 'side' }, preview, statusCard))),
+      tabPanel('applicants', applicantsPanel(received)),
     );
+  }
+
+  /** Applications received by Employer HR: read-only, and never an implication of a placement. */
+  function applicantsPanel(received) {
+    const notice = h(
+      'p',
+      { class: 'notice' },
+      icon('info', 18),
+      'View only. An application is not a placement: shortlisting, interviews and offers are deferred. In this demo the simulated HR user sees applicants for every organization; per-employer access needs real accounts.',
+    );
+    if (received.length === 0) {
+      return [
+        notice,
+        emptyState(
+          'inbox',
+          'No applications yet',
+          'When a student applies to an approved opportunity, the applicant appears here.',
+          h('a', { class: 'btn', href: '#student' }, 'Open the Student view', icon('arrow', 16)),
+        ),
+      ];
+    }
+    return [
+      notice,
+      h('div', { class: 'section-head' }, h('h2', { id: 'applicants-heading', tabindex: '-1' }, `Applications received (${received.length})`)),
+      h(
+        'div',
+        { class: 'grid-2' },
+        received.map((entry) =>
+          h(
+            'article',
+            { class: `card${ui.fresh.has(entry.application.application_id) ? ' is-new' : ''}` },
+            h(
+              'div',
+              { class: 'opp-head' },
+              avatar(entry.student.display_name),
+              h(
+                'div',
+                { class: 'opp-head-text' },
+                h('h3', null, entry.student.display_name),
+                h('p', { class: 'muted' }, `Applied to ${entry.opportunity.title} · ${entry.opportunity.organization_name}`),
+              ),
+              chip(entry.application.application_status, 'submitted'),
+            ),
+            facts([
+              ['Application ID', entry.application.application_id],
+              ['Student ID', entry.student.student_id],
+              ['Opportunity ID', entry.opportunity.opportunity_id],
+              ['Eligibility', chip(entry.student.eligibility_status, 'approved', 'check')],
+              ['Application status', entry.application.application_status],
+              ['Placement status', chip(entry.placement_status, 'neutral')],
+              ['Submitted', h('span', null, formatTime(entry.application.submitted_at), ' (', timeEl(entry.application.submitted_at), ')')],
+            ]),
+          ),
+        ),
+      ),
+    ];
   }
 
   function onEmployerInput(event) {
@@ -1127,14 +1212,15 @@
     const next = ROUTES.some((item) => item.id === routeId) ? routeId : DEFAULT_ROUTE;
     const changed = next !== ui.route;
     ui.route = next;
-    ui.tab = next === 'student' && STUDENT_TABS.some((tab) => tab.id === tabId) ? tabId : 'opportunities';
+    const tabs = ROLE_TABS[next];
+    ui.tab = tabs ? (tabs.some((tab) => tab.id === tabId) ? tabId : tabs[0].id) : null;
     updateNav();
     if (changed || initial) {
       if (changed) clearToast();
       ui.enter = true;
       render({ focusHeading: !initial });
       if (changed && !initial) window.scrollTo(0, 0);
-    } else if (next === 'student') {
+    } else if (tabs) {
       setTab(ui.tab);
     }
   }
