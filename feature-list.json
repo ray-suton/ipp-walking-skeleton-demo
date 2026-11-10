@@ -1,7 +1,7 @@
 {
   "project": "IPP Walking Skeleton Demo (Coop)",
   "last_updated": "2026-11-09",
-  "notes": "passes=true means verified this session: unit tests (npm test, 59/59) and/or a scripted run of the real UI in Chrome against http://127.0.0.1:4173 (48 checks, 0 failures) and against the live GitHub Pages site (21 checks, 0 failures). Story IDs are the baseline backlog IDs from Lab 3; no Sprint 0 R-numbers were available, so none are cited.",
+  "notes": "passes=true means verified this session: unit tests (npm test, 59/59) and/or a scripted run of the real UI in Chrome against http://127.0.0.1:4173 (48 checks, 0 failures) and against the live GitHub Pages site (21 checks, 0 failures; 17 more for the Employer HR applicant view). Story IDs are the baseline backlog IDs from Lab 3; no Sprint 0 R-numbers were available, so none are cited.",
   "features": [
     {
       "id": "F01",
@@ -247,7 +247,7 @@
         "The Applicants tab has no controls and shows no REV-/FAC- IDs; Faculty still shows REV-001"
       ],
       "passes": true,
-      "notes": "Store tests cover the data boundary; scripted Chrome run (22 checks, 21 pass; the one miss was a wrong expectation of a 'new' highlight on arrival, which is not a feature) plus real-key tab navigation and a 390px layout check. The simulated HR user sees applicants for every organization (no per-employer scoping without real accounts). Shortlist/interview/offer actions are deferred. Not pushed or deployed yet."
+      "notes": "Store tests cover the data boundary; scripted Chrome run (22 checks, 21 pass; the one miss was a wrong expectation of a 'new' highlight on arrival, which is not a feature) plus real-key tab navigation and a 390px layout check. The simulated HR user sees applicants for every organization (no per-employer scoping without real accounts). Shortlist/interview/offer actions are deferred. Deployed to GitHub Pages and verified live (17/17 checks)."
     }
   ]
 }

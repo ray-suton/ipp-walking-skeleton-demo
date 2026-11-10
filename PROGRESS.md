@@ -6,7 +6,7 @@ Authoritative planning lives in the course's Lab 3 – Sprint 1 walking-skeleton
 
 Sprint 1: walking skeleton demo. Local standalone implementation is complete and verified; the shared Lovable/GitHub build is a separate class activity.
 
-## 2026-11-10: Employer HR can view applications (committed locally, not pushed)
+## 2026-11-10: Employer HR can view applications (published to GitHub Pages)
 
 **Work done**
 - After a student applies, Employer HR now sees the applicant: new **Applicants** tab on the Employer view (name, student ID, eligibility, application/opportunity IDs, *Submitted* vs *Not placed*, submitted time), a live count on the tab, a "1 applicant · View" link under each opportunity, and a link from the student's apply confirmation (`#employer/applicants`).
@@ -19,14 +19,14 @@ Sprint 1: walking skeleton demo. Local standalone implementation is complete and
 - Real-key tab navigation (ArrowRight, wrap, End), deep link `#employer/applicants` after a real reload, wide two-column Employer layout (seen for the first time), and 390px layout: no horizontal overflow in 5 route states.
 
 **State left behind**
-- Committed locally in `~/ipp-demo` only; the live site still serves the previous build until pushed. Browser demo data was reset.
+- Pushed to `main` (3315274) and live at <https://ray-suton.github.io/ipp-walking-skeleton-demo/>. Live check on the GitHub Pages origin (page fetched fresh): 17/17 checks pass (empty state, submit, approve, apply, HR sees the applicant with Submitted / Not placed, HR sees no review or faculty IDs, "1 applicant · View" link, Faculty still sees REV-001, overview and journey wording), deep link `#employer/applicants` works after a real reload, no console errors. Browser demo data was reset afterwards.
 
 **Known limits and risks**
 - The simulated HR user is not tied to an organization, so it sees applicants for every opportunity. Shortlist/interview/offer actions, "new applicant" badges and what student data employers may see are deferred decisions.
 - Not tested: real phone, Safari/Firefox, screen reader, formal contrast audit.
 
 **Recommended next step**
-Decide whether to push (then wait for the Pages build and re-run the live check, hard-refreshing first).
+Rehearse the demo script once on the presenting machine (hard-refresh first if the page was open recently). `git pull` in the Desktop `Coop/` copy to bring it up to date.
 
 ## 2026-11-09 to 2026-11-10: professional redesign (published to GitHub Pages 2026-11-10)
 
