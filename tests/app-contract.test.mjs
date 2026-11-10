@@ -13,8 +13,8 @@ test('index.html loads the demo from local files only (no CDN, no network calls)
   const css = await read('styles.css');
   assert.deepEqual([...html.matchAll(/<(?:script|link|img|iframe|source)\b[^>]*\b(?:src|href)="(?:https?:)?\/\/[^"]+"/g)], [], 'no external assets');
   assert.doesNotMatch(css, /@import|url\(\s*['"]?(?:https?:)?\/\//, 'stylesheet pulls nothing remote');
-  assert.match(html, /<script src="src\/store\.js"><\/script>\s*<script src="src\/ui\.js"><\/script>\s*<script src="src\/app\.js"><\/script>/, 'scripts load in dependency order');
-  assert.match(html, /<link rel="stylesheet" href="styles\.css"/);
+  assert.match(html, /<script src="src\/store\.js(?:\?v=[0-9a-f]+)?"><\/script>\s*<script src="src\/ui\.js(?:\?v=[0-9a-f]+)?"><\/script>\s*<script src="src\/app\.js(?:\?v=[0-9a-f]+)?"><\/script>/, 'scripts load in dependency order');
+  assert.match(html, /<link rel="stylesheet" href="styles\.css(?:\?v=[0-9a-f]+)?"/);
 });
 
 test('the persistent banner discloses simulated roles, synthetic data and browser-local storage', async () => {
@@ -68,7 +68,7 @@ test('statuses stay separate: no view can show an application as placed', async 
 test('the static server serves exactly what index.html needs and nothing else (no course documents)', async () => {
   const server = await read('scripts/serve.mjs');
   const html = await read('index.html');
-  const needed = [...html.matchAll(/<(?:script src|link rel="stylesheet" href)="([^"]+)"/g)].map((match) => match[1]);
+  const needed = [...html.matchAll(/<(?:script src|link rel="stylesheet" href)="([^"?]+)(?:\?[^"]*)?"/g)].map((match) => match[1]);
   assert.ok(needed.length >= 4, 'found the referenced files');
   for (const file of needed) assert.ok(server.includes(`'/${file}'`), `server must allow /${file}`);
   assert.doesNotMatch(server, /\.docx|\.png|\.md['"]/);

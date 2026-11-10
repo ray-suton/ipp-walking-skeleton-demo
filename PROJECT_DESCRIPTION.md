@@ -23,8 +23,11 @@ Plain HTML + CSS + JavaScript (classic scripts, no build step, no dependencies, 
 
 ```bash
 npm start          # http://127.0.0.1:4173/ (moves to the next free port if busy)
-npm test           # 49 tests: business rules, persistence, UI helpers, static contract
+npm test           # 52 tests: business rules, persistence, UI helpers, static contract, cache-busting
+npm run stamp      # after changing styles.css or any src/*.js, BEFORE committing (see below)
 ```
+
+**Release step.** GitHub Pages and browsers cache files for about 10 minutes, so right after a deploy a visitor could get the new `index.html` with old scripts. `npm run stamp` writes a content hash into each asset URL in `index.html` (`app.js?v=…`) so new HTML only requests matching files. `npm test` fails if the hashes are stale.
 
 Opening `index.html` straight from disk should also work (the scripts are classic, not ES modules), but this was **not tested**; use `npm start` for the demo.
 
